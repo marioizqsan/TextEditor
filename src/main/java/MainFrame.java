@@ -2,6 +2,9 @@ package src.main.java;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainFrame extends JFrame {
 
@@ -11,6 +14,10 @@ public class MainFrame extends JFrame {
     private JMenuBar menu;
     private JMenu file, edit, select, view, appearance;
     private JMenuItem menuItem;
+    private List textAreas;
+    private List scrolls;
+    private List files;
+    private int panelCounter = 0;
 
     public MainFrame() {
         setTitle("MyNotepad");
@@ -22,8 +29,15 @@ public class MainFrame extends JFrame {
         mainPanel = new JPanel();
         mainPanel.setLayout(new BorderLayout());
 
+        jTabbedPane = new JTabbedPane();
+
+        //---------- Menu ----------
         createMenu();
-        createTextAreaTab();
+
+        //---------- Text Area ---------
+        files = new ArrayList<File>();
+        textAreas = new ArrayList<JTextPane>();
+        scrolls = new ArrayList<JScrollPane>();
 
         mainPanel.add(menuPanel, BorderLayout.NORTH);
         mainPanel.add(jTabbedPane, BorderLayout.CENTER);
@@ -32,13 +46,18 @@ public class MainFrame extends JFrame {
     }
 
     private void createTextAreaTab() {
-        jTabbedPane = new JTabbedPane();
         JPanel tab = new JPanel();
-        JTextPane textArea = new JTextPane();
 
-        tab.add(textArea);
+        files.add(new File(""));
+        textAreas.add(new JTextPane());
+        scrolls.add(new JScrollPane((Component) textAreas.get(panelCounter)));
+
+        tab.add((Component) scrolls.get(panelCounter));
 
         jTabbedPane.addTab("Tab", tab);
+        jTabbedPane.setSelectedIndex(panelCounter);
+
+        panelCounter++;
     }
 
     private void createMenu(){
@@ -54,11 +73,11 @@ public class MainFrame extends JFrame {
         appearance = new JMenu("Appearance");
 
         //File option items
-        addMenuItem("New", "File", "");
-        addMenuItem("Open", "File", "");
+        addMenuItem("New", "File", "New");
+        addMenuItem("Open", "File", "Open");
         file.addSeparator();
-        addMenuItem("Save", "File", "");
-        addMenuItem("Save as", "File", "");
+        addMenuItem("Save", "File", "Save");
+        addMenuItem("Save as", "File", "Save as");
 
         //Edit option items
         addMenuItem("Undo", "Edit", "");
@@ -91,6 +110,11 @@ public class MainFrame extends JFrame {
         switch (menuOption) {
             case "File":
                 file.add(menuItem);
+                if("New".equals(action)){
+                    menuItem.addActionListener(e -> {
+                        createTextAreaTab();
+                    });
+                }
                 break;
 
             case "Edit":
