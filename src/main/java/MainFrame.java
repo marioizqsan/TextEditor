@@ -2,7 +2,7 @@ package src.main.java;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,10 +14,12 @@ public class MainFrame extends JFrame {
     private JMenuBar menu;
     private JMenu file, edit, select, view, appearance;
     private JMenuItem menuItem;
-    private List textAreas;
-    private List scrolls;
-    private List files;
-    private int panelCounter = 0;
+    private List<JTextPane> textAreas;
+    private List<JScrollPane> scrolls;
+    private List<File> files;
+    private int panelCounter = 0; //It tells us how many panels exist
+    private boolean existPanel = false; //It tells us if there are panels already created
+    JFileChooser jFileChooser;
 
     public MainFrame() {
         setTitle("MyNotepad");
@@ -58,9 +60,10 @@ public class MainFrame extends JFrame {
         jTabbedPane.setSelectedIndex(panelCounter);
 
         panelCounter++;
+        existPanel = true;
     }
 
-    private void createMenu(){
+    private void createMenu() {
         menuPanel = new JPanel();
         menuPanel.setLayout(new BorderLayout());
 
@@ -106,13 +109,102 @@ public class MainFrame extends JFrame {
 
     private void addMenuItem(String itemName, String menuOption, String action) {
         menuItem = new JMenuItem(itemName);
+        jFileChooser = new JFileChooser();
 
         switch (menuOption) {
             case "File":
                 file.add(menuItem);
-                if("New".equals(action)){
+                if ("New".equals(action)) {
                     menuItem.addActionListener(e -> {
                         createTextAreaTab();
+                    });
+                } else if ("Open".equals(action)) {
+                    menuItem.addActionListener(e -> {
+                        jFileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+                        if (jFileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                            File file = jFileChooser.getSelectedFile();
+                            boolean fileOpen = false;
+
+                            //We check if the selected file is already open and, in that case, we open the tab with the file content
+                            for (int i = 0; i < jTabbedPane.getTabCount(); i++) {
+                                if (files.get(i).getPath().equals(file.getPath())) {
+                                    fileOpen = true;
+                                    jTabbedPane.setSelectedIndex(i);
+                                    break;
+                                }
+                            }
+
+                            if (!fileOpen) {
+                                createTextAreaTab();
+
+                                files.set(jTabbedPane.getSelectedIndex(), file);
+
+                                try {
+                                    FileReader fileReader = new FileReader(file.getPath());
+                                    BufferedReader bufferedReader = new BufferedReader(fileReader);
+                                    String line = "";
+
+                                    jTabbedPane.setTitleAt(jTabbedPane.getSelectedIndex(), file.getName());
+
+                                    while (line != null) {
+                                        line = bufferedReader.readLine();
+                                        if (line != null) {
+                                            Utilities.append(line.concat("\n"), (JTextPane) textAreas.get(jTabbedPane.getSelectedIndex()));
+                                        }
+                                    }
+                                } catch (IOException ex) {
+                                    ex.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                } else if ("Save".equals(action)) {
+                    menuItem.addActionListener(e -> {
+                        //If there is no one file open in the system
+                        if (jTabbedPane.getTabCount() == 0) {
+                            menuItem.setEnabled(false);
+                        } else {
+                            //The file doesn't exist in the system
+                            if (files.get(jTabbedPane.getSelectedIndex()).getPath().isEmpty()) {
+                                if (jFileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+                                    File file = jFileChooser.getSelectedFile();
+
+                                    files.set(jTabbedPane.getSelectedIndex(), file);
+
+                                    jTabbedPane.setTitleAt(jTabbedPane.getSelectedIndex(), file.getName());
+
+                                    try {
+                                        FileWriter fileWriter = new FileWriter(files.get(jTabbedPane.getSelectedIndex()).getPath());
+
+                                        String text = textAreas.get(jTabbedPane.getSelectedIndex()).getText();
+
+                                        for (int i = 0; i < text.length(); i++) {
+                                            fileWriter.write(text.charAt(i));
+                                        }
+
+                                        fileWriter.close();
+                                    } catch (IOException ex) {
+                                        ex.printStackTrace();
+                                    }
+                                }
+
+                            } else {
+                                //If the file already exists in the system, it must save automatically without asking us
+                                try {
+                                    FileWriter fileWriter = new FileWriter(files.get(jTabbedPane.getSelectedIndex()).getPath());
+
+                                    String text = textAreas.get(jTabbedPane.getSelectedIndex()).getText();
+
+                                    for (int i = 0; i < text.length(); i++) {
+                                        fileWriter.write(text.charAt(i));
+                                    }
+
+                                    fileWriter.close();
+                                } catch (IOException ex) {
+                                    ex.printStackTrace();
+                                }
+                            }
+                        }
                     });
                 }
                 break;
