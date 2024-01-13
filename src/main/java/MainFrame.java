@@ -56,7 +56,7 @@ public class MainFrame extends JFrame {
 
         tab.add((Component) scrolls.get(panelCounter));
 
-        jTabbedPane.addTab("Tab", tab);
+        jTabbedPane.addTab("New", tab);
         jTabbedPane.setSelectedIndex(panelCounter);
 
         panelCounter++;
@@ -110,6 +110,7 @@ public class MainFrame extends JFrame {
     private void addMenuItem(String itemName, String menuOption, String action) {
         menuItem = new JMenuItem(itemName);
         jFileChooser = new JFileChooser();
+        jFileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
         switch (menuOption) {
             case "File":
@@ -120,7 +121,6 @@ public class MainFrame extends JFrame {
                     });
                 } else if ("Open".equals(action)) {
                     menuItem.addActionListener(e -> {
-                        jFileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
                         if (jFileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
                             File file = jFileChooser.getSelectedFile();
                             boolean fileOpen = false;
@@ -190,6 +190,35 @@ public class MainFrame extends JFrame {
 
                             } else {
                                 //If the file already exists in the system, it must save automatically without asking us
+                                try {
+                                    FileWriter fileWriter = new FileWriter(files.get(jTabbedPane.getSelectedIndex()).getPath());
+
+                                    String text = textAreas.get(jTabbedPane.getSelectedIndex()).getText();
+
+                                    for (int i = 0; i < text.length(); i++) {
+                                        fileWriter.write(text.charAt(i));
+                                    }
+
+                                    fileWriter.close();
+                                } catch (IOException ex) {
+                                    ex.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                } else if ("Save as".equals(action)) {
+                    menuItem.addActionListener(e -> {
+                        //If there is no one file open in the system
+                        if (jTabbedPane.getTabCount() == 0) {
+                            menuItem.setEnabled(false);
+                        } else {
+                            if (jFileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
+                                File file = jFileChooser.getSelectedFile();
+
+                                files.set(jTabbedPane.getSelectedIndex(), file);
+
+                                jTabbedPane.setTitleAt(jTabbedPane.getSelectedIndex(), file.getName());
+
                                 try {
                                     FileWriter fileWriter = new FileWriter(files.get(jTabbedPane.getSelectedIndex()).getPath());
 
