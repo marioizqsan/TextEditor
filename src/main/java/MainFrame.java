@@ -1,6 +1,8 @@
 package src.main.java;
 
 import javax.swing.*;
+import javax.swing.text.DefaultEditorKit;
+import javax.swing.undo.UndoManager;
 import java.awt.*;
 import java.io.*;
 import java.util.ArrayList;
@@ -17,6 +19,7 @@ public class MainFrame extends JFrame {
     private List<JTextPane> textAreas;
     private List<JScrollPane> scrolls;
     private List<File> files;
+    private List<UndoManager> undoManagers;
     private int panelCounter = 0; //It tells us how many panels exist
     private boolean existPanel = false; //It tells us if there are panels already created
     JFileChooser jFileChooser;
@@ -40,6 +43,7 @@ public class MainFrame extends JFrame {
         files = new ArrayList<File>();
         textAreas = new ArrayList<JTextPane>();
         scrolls = new ArrayList<JScrollPane>();
+        undoManagers = new ArrayList<UndoManager>();
 
         mainPanel.add(menuPanel, BorderLayout.NORTH);
         mainPanel.add(jTabbedPane, BorderLayout.CENTER);
@@ -53,6 +57,10 @@ public class MainFrame extends JFrame {
         files.add(new File(""));
         textAreas.add(new JTextPane());
         scrolls.add(new JScrollPane((Component) textAreas.get(panelCounter)));
+        undoManagers.add(new UndoManager());
+
+        //To track text area changes
+        textAreas.get(panelCounter).getDocument().addUndoableEditListener(undoManagers.get(panelCounter));
 
         tab.add((Component) scrolls.get(panelCounter));
 
@@ -83,15 +91,15 @@ public class MainFrame extends JFrame {
         addMenuItem("Save as", "File", "Save as");
 
         //Edit option items
-        addMenuItem("Undo", "Edit", "");
-        addMenuItem("Redo", "Edit", "");
+        addMenuItem("Undo", "Edit", "Undo");
+        addMenuItem("Redo", "Edit", "Redo");
         edit.addSeparator();
-        addMenuItem("Cut", "Edit", "");
-        addMenuItem("Copy", "Edit", "");
-        addMenuItem("Paste", "Edit", "");
+        addMenuItem("Cut", "Edit", "Cut");
+        addMenuItem("Copy", "Edit", "Copy");
+        addMenuItem("Paste", "Edit", "Paste");
 
         //Select option items
-        addMenuItem("Select all", "Select", "");
+        addMenuItem("Select all", "Select", "Select all");
 
         //View option items
         addMenuItem("Numeration", "View", "");
@@ -239,19 +247,43 @@ public class MainFrame extends JFrame {
                 break;
 
             case "Edit":
-                edit.add(itemName);
+                edit.add(menuItem);
+                if ("Undo".equals(action)) {
+                    menuItem.addActionListener(e -> {
+                        if (undoManagers.get(jTabbedPane.getSelectedIndex()).canUndo()) {
+                            undoManagers.get(jTabbedPane.getSelectedIndex()).undo();
+                        }
+                    });
+                } else if ("Redo".equals(action)) {
+                    menuItem.addActionListener(e -> {
+                        if (undoManagers.get(jTabbedPane.getSelectedIndex()).canRedo()) {
+                            undoManagers.get(jTabbedPane.getSelectedIndex()).redo();
+                        }
+                    });
+                } else if ("Cut".equals(action)) {
+                    menuItem.addActionListener(new DefaultEditorKit.CutAction());
+                } else if ("Copy".equals(action)) {
+                    menuItem.addActionListener(new DefaultEditorKit.CopyAction());
+                } else if ("Paste".equals(action)) {
+                    menuItem.addActionListener(new DefaultEditorKit.PasteAction());
+                }
                 break;
 
             case "Select":
-                select.add(itemName);
+                select.add(menuItem);
+                if("Select all".equals(action)){
+                    menuItem.addActionListener(e -> {
+                        textAreas.get(jTabbedPane.getSelectedIndex()).selectAll();
+                    });
+                }
                 break;
 
             case "View":
-                view.add(itemName);
+                view.add(menuItem);
                 break;
 
             default:
-                appearance.add(itemName);
+                appearance.add(menuItem);
                 break;
         }
     }
